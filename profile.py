@@ -10,7 +10,7 @@ imageList = [
 ]
 
 pc = portal.Context()
-pc.defineParameter("num_nodes", "Number of GPU nodes",
+pc.defineParameter("num_nodes", "Number of r7525 nodes",
                    portal.ParameterType.INTEGER, 1)
 pc.defineParameter("os_image", "OS image",
                    portal.ParameterType.IMAGE, imageList[0], imageList)
@@ -20,35 +20,29 @@ params = pc.bindParameters()
 
 request = pc.makeRequestRSpec()
 
-# add lan
-lan = request.LAN("Lan")
-lan.best_effort = True
-lan.vlan_tagging = True
-lan.link_multiplexing = True
+reglan = request.LAN("regLAN")
+reglan.best_effort = True
+reglan.vlan_tagging = True
+reglan.link_multiplexing = True
+bflan = request.LAN("bfLAN")
 
-# add bluefield for r7525 hw type
-global linkbf
-linkbf = request.Link('bluefield')
-linkbf.type = "generic_100g"
-
-# normal nodes
 for i in range(params.num_nodes):
     node = request.RawPC("node{}".format(i + 1))
     node.disk_image = params.os_image
     node.hardware_type = 'r7525'
     bs = node.Blockstore("bs{}".format(i + 1), "/data")
     bs.size = params.data_size
-    intf = node.addInterface("if1")
-    # r7525 requires special config to use its normal 25Gbps experimental network
-    intf.bandwidth = 25600
+    # ConnectX-5 25Gbps
+    iface = node.addInterface("eth1")
+    iface.bandwidth = 25600
+    iface.addAddress(rspec.IPv4Address(
+        "192.168.1.{}".format(i + 1), "255.255.255.0"))
+    reglan.addInterface(iface)
     # Initialize BlueField DPU.
     bfif = node.addInterface("bf")
     bfif.addAddress(rspec.IPv4Address(
-        "192.168.10.{}".format(i + 1), "255.255.255.0"))
+        "11.11.11.{}".format(i + 1), "255.255.255.0"))
     bfif.bandwidth = 100000000
-    linkbf.addInterface(bfif)
-    intf.addAddress(rspec.IPv4Address(
-        "192.168.1.{}".format(i + 1), "255.255.255.0"))
-    lan.addInterface(intf)
+    bflan.addInterface(bfif)
 
 pc.printRequestRSpec(request)
