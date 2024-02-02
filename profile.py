@@ -1,4 +1,4 @@
-"""A cluster of r7525 nodes, attached to a LAN
+"""A cluster of r7525 nodes, attached to two LANs (one through the ConnectX-5 port and the other through the BlueField2 port.
 """
 
 import geni.portal as portal
@@ -11,11 +11,11 @@ imageList = [
 
 pc = portal.Context()
 pc.defineParameter("num_nodes", "Number of r7525 nodes",
-                   portal.ParameterType.INTEGER, 1)
+                   portal.ParameterType.INTEGER, 2)
 pc.defineParameter("os_image", "OS image",
                    portal.ParameterType.IMAGE, imageList[0], imageList)
 pc.defineParameter("data_size", "local storage size",
-                   portal.ParameterType.STRING, "512GB")
+                   portal.ParameterType.STRING, "256GB")
 params = pc.bindParameters()
 
 request = pc.makeRequestRSpec()
